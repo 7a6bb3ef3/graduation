@@ -51,6 +51,7 @@ string getHelpInfo() {
     info += "   -u  HSV mode convert to gray, upper blue value [default 135]\n";
     info += "   -a  canny threshold paramA[default 100]\n";
     info += "   -b  canny threshold paramB[default 200]\n";
+    return info;
 }
 
 
@@ -62,7 +63,7 @@ void parseFlag(int argc, char* argv[]){
         switch (ch)
         {
         case 'h':
-            cout << "help info\n";
+            cout << getHelpInfo();
             exit(0);
         case 'w':
             cout << "set width for resize " << optarg << '\n';
@@ -107,17 +108,17 @@ void handleImg() {
         cout << "no such file " << fileName << '\n';
         return;
     }
-    Mat resizeOut;
-    resize(raw, resizeOut, Size(resizeWidth, resizeHeight));
 
     Mat hsv;
     Mat gray;
-    cvtColor(resizeOut ,hsv ,CV_BGR2HSV);
+    cvtColor(raw ,hsv ,CV_BGR2HSV);
     inRange(hsv , Scalar(lowerBlue, 50, 50) ,Scalar(upperBlue ,255 ,255) , gray);
 
-    Mat dst;
-    Canny(gray, dst, thresholdA, thresholdB);
+    Mat afterGaus;
+    GaussianBlur(gray ,afterGaus ,Size(3 ,3) ,0 ,0);
 
+    Mat dst;
+    dst = afterGaus;
     if (out.compare("") == 0) {
         imwrite("out_" + fileName, dst);
     }

@@ -15,7 +15,7 @@ int resizeWidth = 300;
 int resizeHeight = 90;
 
 int lowerBlue = 100;
-int upperBlue = 135;
+int upperBlue = 124;
 
 string fileName = "";
 string out = "";
@@ -26,6 +26,7 @@ string getHelpInfo();
 int comparePoint(Point p1, Point p2);
 bool validRect(Point p1, Point p2);
 bool validCharRect(Point p1, Point p2);
+void removeRivets(Mat *src ,int offset);
 
 
 
@@ -55,7 +56,7 @@ string getHelpInfo() {
     info += "   -w  License plate final resized width [default 300]\n";
     info += "   -H  License plate final resized height [default 90]\n";
     info += "   -l  HSV to binary, lower blue value [default 100]\n";
-    info += "   -u  HSV to binary, upper blue value [default 135]\n";
+    info += "   -u  HSV to binary, upper blue value [default 124]\n";
     return info;
 }
 
@@ -99,6 +100,7 @@ void parseFlag(int argc, char* argv[]) {
 }
 
 void handleImg() {
+    list<string> toTar;
     Mat raw;
     raw = imread(fileName);
     if (!raw.data) {
@@ -111,10 +113,9 @@ void handleImg() {
     Mat hsv;
     Mat bin;
     cvtColor(afterGaus, hsv, CV_BGR2HSV);
-    inRange(hsv, Scalar(lowerBlue, 50, 50), Scalar(upperBlue, 255, 255), bin);
+    inRange(hsv, Scalar(lowerBlue, 55, 57), Scalar(upperBlue, 255, 255), bin);
     imwrite("tmp_" + fileName, bin);
-    cout << "save tmp binary img as tmp_" << fileName << '\n';
-
+    toTar.push_back("tmp_" + fileName);
 
     vector<vector<Point> > contours;
     vector<Vec4i> hierarchy;
@@ -164,37 +165,36 @@ void handleImg() {
     Mat plate = bak(Range(minY ,maxY) ,Range(minX ,maxX));
     Mat resizedPlate;
     resize(plate, resizedPlate, Size(resizeWidth, resizeHeight));
-
-    vector<vector<Point> > plateContours;
-    vector<Vec4i> plateHierarchy;
-    Mat resizePlatebak;
-    resizedPlate.copyTo(resizePlatebak);
-    findContours(resizedPlate, plateContours, plateHierarchy, CV_RETR_EXTERNAL, CV_CHAIN_APPROX_NONE);
-    cout << plateContours.size() << " possible contours in plate\n";
-    vector<vector<Point> > charRect;
-    for (int i = 0; i < plateContours.size();i++) {
-        Rect rect = boundingRect(plateContours[i]);
-        Point l;
-        Point r;
-        l = rect.tl();
-        r = rect.br();
-        line(resizePlatebak, l, r, Scalar(255), 1);
-        if (validCharRect(l ,r)) {
-            vector<Point> tmp;
-            tmp.push_back(l);
-            tmp.push_back(r);
-            charRect.push_back(tmp);
-        }
-    }
-    cout << charRect.size() << " pass char rect validation\n";
-    if (charRect.size() != 6 && charRect.size() != 7) {
-        cout << "error:char rect number must be 6 or 7\n";
-        return;
-    }
+    removeRivets(&resizedPlate ,10);
+    
+    Mat output[7];
+    output[0] = resizedPlate(Range(10, 82), Range(5, 45));
+    output[1] = resizedPlate(Range(10, 82), Range(45, 90));
+    output[2] = resizedPlate(Range(10, 82), Range(95, 140));
+    output[3] = resizedPlate(Range(10, 82), Range(140, 185));
+    output[4] = resizedPlate(Range(10, 82), Range(185, 220));
+    output[5] = resizedPlate(Range(10, 82), Range(220, 260));
+    output[6] = resizedPlate(Range(10, 82), Range(260, 299));
 
     string plateFileName = "plate_" + fileName;
-    imwrite(plateFileName, resizePlatebak);
-    cout << "save license plate cut as " << plateFileName << '\n';
+    imwrite(plateFileName, resizedPlate);
+    toTar.push_back(plateFileName);
+    for (int i = 0; i < 7;i++) {
+        string chname = "char_" + to_string(i) + "_" + fileName;
+        imwrite(chname, output[i]);
+        toTar.push_back(chname);
+    }
+
+    list<string>::iterator it;
+    string cmd = "tar -cf output.tar ";
+    for (it = toTar.begin(); it != toTar.end(); it++) {
+        cmd += *it + " ";
+    }
+    system(cmd.c_str());
+    for (it = toTar.begin(); it != toTar.end(); it++) {
+        cmd = "rm -f " + *it;
+        system(cmd.c_str());
+    }
     return;
 }
 
@@ -207,7 +207,33 @@ void handleImg() {
 
 
 
+void removeRivets(Mat *src ,int offset) {
+    int maxX = src->cols;
+    int maxY = src->rows;
+    for (int y = 0; y < offset;y++) {
+        for (int x = 0; x < maxX;x++) {
+            src->at<uchar>(y, x) = 0;
+        }
+    }
 
+    for (int y = maxY-1; y > maxY - 1 - offset;y--) {
+        for (int x = 0; x < maxX; x++) {
+            src->at<uchar>(y, x) = 0;
+        }
+    }
+
+    for (int x = 0; x < 5;x++) {
+        for (int y = 0; y < maxY;y++) {
+            src->at<uchar>(y, x) = 0;
+        }
+    }
+
+    for (int x = maxX-1; x > maxX - 6; x--) {
+        for (int y = 0; y < maxY; y++) {
+            src->at<uchar>(y, x) = 0;
+        }
+    }
+}
 
 
 int comparePoint(Point p1, Point p2) {
@@ -225,7 +251,7 @@ int comparePoint(Point p1, Point p2) {
 bool validRect(Point p1, Point p2) {
     int deltaX = abs(p1.x - p2.x);
     int deltaY = abs(p1.y - p2.y);
-    return deltaX > 100 && deltaY > 50 && deltaX > deltaY;
+    return deltaX > 100 && deltaY > 40 && deltaX > deltaY;
 }
 
 bool validCharRect(Point p1, Point p2) {

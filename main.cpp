@@ -61,7 +61,7 @@ string getHelpInfo() {
 
 void parseFlag(int argc, char* argv[]) {
     char ch;
-    while ((ch = getopt(argc, argv, "hw:H:a:b:f:o:l:u:")) != -1)
+    while ((ch = getopt(argc, argv, "hf:o:l:u:")) != -1)
     {
 
         switch (ch)
@@ -69,14 +69,6 @@ void parseFlag(int argc, char* argv[]) {
         case 'h':
             cout << getHelpInfo();
             exit(0);
-        case 'w':
-            cout << "width for resize " << optarg << '\n';
-            resizeWidth = atoi(optarg);
-            break;
-        case 'H':
-            cout << "height for resize " << optarg << '\n';
-            resizeHeight = atoi(optarg);
-            break;
         case 'f':
             cout << "image file name " << optarg << '\n';
             fileName = optarg;

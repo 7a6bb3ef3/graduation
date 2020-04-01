@@ -53,8 +53,6 @@ string getHelpInfo() {
     info += "   -h  Display help info and exit\n";
     info += "   -f  Input file name[required]\n";
     info += "   -o  Output file name\n";
-    info += "   -w  License plate final resized width [default 300]\n";
-    info += "   -H  License plate final resized height [default 90]\n";
     info += "   -l  HSV to binary, lower blue value [default 100]\n";
     info += "   -u  HSV to binary, upper blue value [default 124]\n";
     return info;
@@ -186,7 +184,10 @@ void handleImg() {
     }
 
     list<string>::iterator it;
-    string cmd = "tar -cf output.tar ";
+    if (out.compare("") == 0) {
+        out = "output.tar";
+    }
+    string cmd = "tar -cf " + out + " ";
     for (it = toTar.begin(); it != toTar.end(); it++) {
         cmd += *it + " ";
     }

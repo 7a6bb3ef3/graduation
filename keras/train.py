@@ -1,0 +1,3 @@
+import snnn
+
+snnn.train()

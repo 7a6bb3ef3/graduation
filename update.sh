@@ -3,5 +3,3 @@
 git pull https://github.com/nynicg/graduation
 
 g++ main.cpp -o diyusi `pkg-config --libs --cflags opencv` -std=c++11
-
-chmod 755 diyusi

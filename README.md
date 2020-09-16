@@ -1,7 +1,5 @@
-## Graduation Project
+## Graduation Project(For D)
 
 License plate recognition program.
-
-ShangJiang Du.
 
 Special thanks ICG ANEKI ,MSRMZNM ANKEI.
